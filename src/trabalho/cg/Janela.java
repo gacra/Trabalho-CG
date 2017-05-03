@@ -1,4 +1,3 @@
-
 package trabalho.cg;
 
 import java.awt.Color;
@@ -7,6 +6,10 @@ import javax.media.opengl.GLCanvas;
 import javax.media.opengl.GLCapabilities;
 import javax.swing.JColorChooser;
 
+/**
+ * Janela da interface gráfica.
+ * 
+ */
 public class Janela extends javax.swing.JFrame{
 
     Renderer renderer;
@@ -27,12 +30,13 @@ public class Janela extends javax.swing.JFrame{
         renderer = new Renderer(canvas, pp);
         canvas.addGLEventListener(renderer);
         canvas.addMouseListener(renderer);
-        canvas.addKeyListener(renderer);
         
+        //Insere canvas na janela
         FlowLayout layout = new FlowLayout();
         painelOGL.setLayout(layout);
         painelOGL.add(canvas);
         
+        //Configurações adicionais
         this.setLocationRelativeTo(null);
         this.setVisible(true);
     }
@@ -52,6 +56,7 @@ public class Janela extends javax.swing.JFrame{
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Trabalho de Computação Gráfica");
+        setMinimumSize(new java.awt.Dimension(550, 640));
 
         painelOGL.setPreferredSize(new java.awt.Dimension(507, 529));
 
@@ -85,14 +90,14 @@ public class Janela extends javax.swing.JFrame{
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
+                .addContainerGap(15, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(painelOGL, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addComponent(preencher, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(cor, javax.swing.GroupLayout.PREFERRED_SIZE, 230, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(18, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -109,24 +114,26 @@ public class Janela extends javax.swing.JFrame{
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    /**
+     * Ao clicar no botão "Preencher"
+     */
     private void preencherActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preencherActionPerformed
         if(renderer.preencher()){
             preencher.setText("Apagar");
-            cor.setEnabled(false);
         }else{
             preencher.setText("Preencher");
-            cor.setEnabled(true);
         }
     }//GEN-LAST:event_preencherActionPerformed
 
+    /**
+     * Ao clicar no botão "Cor" 
+     */
     private void corActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_corActionPerformed
         Color cor = JColorChooser.showDialog(null, "Cor", Color.RED);
         if(cor !=null){
             renderer.setCor(cor.getRed(), cor.getGreen(), cor.getBlue());
         }
     }//GEN-LAST:event_corActionPerformed
-
-
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton cor;

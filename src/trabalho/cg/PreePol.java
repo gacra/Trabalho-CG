@@ -8,13 +8,18 @@ import java.util.LinkedList;
 import java.util.Set;
 import javafx.util.Pair;
 
+/**
+ * Classe responsável pelo algoritmo de Preenchimento de Polígonos 
+ */
 public class PreePol{
-    private HashMap<Integer, LinkedList<Entrada>> edgeTable;
+    //Tabela de Lados (EdgeTable - ET) e sua cópia
+    private HashMap<Integer, LinkedList<Entrada>> edgeTable, edgeTable_copia;
+    //Tabela de Lados Ativos (Active Edge Table - AET)
     private LinkedList<Entrada> activeEdgeTable;
-    int x_primeiro, y_primeiro;
-    int x_anterior, y_anterior;
-    int linVar;
-    Comparator<Entrada> comparador;
+    int x_primeiro, y_primeiro; //Coordenadas do primeiro ponto
+    int x_anterior, y_anterior; //Coordenadas do último ponto inserido    
+    int linVar; //Linha de varredura atual
+    Comparator<Entrada> comparador; //Comparador usado na ordenação
 
     public PreePol(){
         edgeTable = new HashMap<>();
@@ -24,9 +29,9 @@ public class PreePol{
 
             @Override
             public int compare(Entrada o1, Entrada o2){
-                if(o1.getX() == o2.getX()){
+                if(o1.getX_int()== o2.getX_int()){
                     return 0;
-                }else if(o1.getX() > o2.getX()){
+                }else if(o1.getX_int()> o2.getX_int()){
                     return 1;
                 }else{
                     return -1;
@@ -35,20 +40,31 @@ public class PreePol{
         };
     }
     
-    public boolean addPonto(int x, int y){
+    /**
+     * Adiciona um novo ponto.
+     * A partir do segundo ponto adicionado, a aresta formada por esse 
+     * ponto e o anterior a ele é adicionada na ET.
+     * @param x Coordenada x do ponto
+     * @param y Coordenada y do ponto
+     */
+    public void addPonto(int x, int y){
         if(x_primeiro == -1){   //Primeiro ponto
             x_primeiro = x_anterior = x;
             y_primeiro = y_anterior = y;
-            return true;
         }
-        if(y != y_anterior){
+        if(y != y_anterior){    //Não insere arestas horizontais
             int y_min, y_max;
             float x_min, m_inv;
+            int num, den;
             
             if(x<x_anterior){
                 m_inv = (float)(x_anterior - x)/(float)(y_anterior-y);
+                num = x_anterior - x;
+                den = y_anterior-y;
             }else{
                 m_inv = (float)(x - x_anterior) / (float)(y - y_anterior);
+                num = x - x_anterior;
+                den = y - y_anterior;
             }
             
             if(y<y_anterior){
@@ -62,35 +78,34 @@ public class PreePol{
             }
             
             if(edgeTable.containsKey(y_min)){
-                edgeTable.get(y_min).add(new Entrada(y_max, x_min, m_inv));
+                edgeTable.get(y_min).add(new Entrada(y_max, (int)x_min,num, den));
                 Collections.sort(edgeTable.get(y_min), comparador);
             }else{
                 LinkedList<Entrada> novaLista = new LinkedList<>();
-                novaLista.add(new Entrada(y_max, x_min, m_inv));
+                novaLista.add(new Entrada(y_max, (int)x_min,num, den));
                 edgeTable.put(y_min, novaLista);
             }
         }
                     
         x_anterior = x;
         y_anterior = y;
-        
-        return true;
     }
     
-    public void imprimeET(){
-        System.out.println("Edge Table:\n");
-        Set<Integer> chaves = edgeTable.keySet();
-        for(Integer chave : chaves){
-            System.out.println("Linhas de varredura: " + chave);
-            LinkedList<Entrada> lista = edgeTable.get(chave);
-            for(Entrada ent : lista) { //percorrer toda a lista até o ultimo elemento
-                System.out.println(ent);
-            }        
-        }   
-    }
-    
-    public int termina(){
+    /**
+     * "Fecha" o polígono, criando uma aresta entre o último ponto adicionado
+     * e o primeiro.
+     */
+    public void termina(){
         addPonto(x_primeiro, y_primeiro);
+    }
+    
+    /**
+     * Prepara os objetos para o loop de manipulação da AET.
+     * Chamada antes de Preencher().
+     * Cria uma cópia da ET, para caso o algoritmo seja rodado novamente.
+     * @return Menor linha de varredura não vazia da ET.
+     */
+    public int prepara(){
         Set<Integer> chaves = edgeTable.keySet();
         Iterator<Integer> it = chaves.iterator();
         linVar = 500;
@@ -100,28 +115,36 @@ public class PreePol{
                 linVar = next;
             }
         }
+        copia();
         return linVar;
     }
     
+    /**
+     * Loop de manipulação da AET com retorno dos intervalos de pixels a
+     * serem pintados.
+     * Cada chamada da função corresponde a apenas uma volta do loop.
+     * @return Lista de intervalos de pixels a serem pintados na
+     * linha de varredura atual. 
+     * Null caso não haja mais pixels a serem pintados.
+     */
     public LinkedList<Pair<Integer, Integer>> preencher(){
-        //System.out.println("PreePol: " + linVar);
         //Repita até a ET e a AET estarem vazias
-        if(edgeTable.isEmpty() && activeEdgeTable.isEmpty()){
+        if(edgeTable_copia.isEmpty() && activeEdgeTable.isEmpty()){
             //System.out.println("Saindo: " + linVar);
             return null;
         }
         
         //Transfere as arestas da linha de varredura da ET para a AET
         //mantendo a ordenação em x.
-        if(edgeTable.containsKey(linVar)){
-            LinkedList<Entrada> lista = edgeTable.get(linVar);
+        if(edgeTable_copia.containsKey(linVar)){
+            LinkedList<Entrada> lista = edgeTable_copia.get(linVar);
             for(Entrada e: lista){
                 activeEdgeTable.add(e);
             }
-            edgeTable.remove(linVar);
+            edgeTable_copia.remove(linVar);
             Collections.sort(activeEdgeTable, comparador);
         }
-        //imprimeAET();
+
         //Retira os lados que possuem y_max = linha de varredura.
         Iterator itr = activeEdgeTable.iterator();
         while (itr.hasNext()) {
@@ -129,16 +152,15 @@ public class PreePol{
                 itr.remove();
             }
         }
-        //imprimeAET();
+
         //Desenhe os pixels
         LinkedList<Pair<Integer, Integer>> listaPixels = 
                 new LinkedList<>();
         int x_ini, x_fim;
         Iterator<Entrada> it = activeEdgeTable.iterator();
         for(int i=0; i<activeEdgeTable.size(); i+=2){
-            x_ini = (int) Math.ceil((double)(it.next()).x);
-            x_fim = ((int) Math.ceil((double)(it.next()).x))-1; 
-            //System.out.println("X_ini, x_fim" + x_ini + "," + x_fim);
+            x_ini = it.next().x_arredonda();
+            x_fim = it.next().x_arredonda() - 1;
             listaPixels.add(new Pair<>(x_ini, x_fim));
         }
         
@@ -153,20 +175,32 @@ public class PreePol{
         //Reordenar a AET
         Collections.sort(activeEdgeTable, comparador);
         
-        //imprimeAET();
-        
         return listaPixels;
     }
-    
-    public void imprimeAET(){
-        System.out.println("AET: ");
-        for(Entrada e: activeEdgeTable){
-            System.out.println(e.toString());
-        }
+
+    /**
+     * Reinicia o algoritmo.
+     * Limpa a ET e se prepara pra receber os pontos novos.
+     */
+    public void reinicia(){
+        edgeTable.clear();
+        x_primeiro = -1;
     }
     
-    public void reinicia(){
-        x_primeiro = -1;
+    /**
+     * Faz uma cópia da ET.
+     */
+    public void copia(){
+        edgeTable_copia = new HashMap<>();
+        LinkedList<Entrada> copiaList;
+        Set<Integer> chaves = edgeTable.keySet();
+        for(Integer chave : chaves){
+            copiaList = new LinkedList<>();
+            for(Entrada e: edgeTable.get(chave)){
+                copiaList.add((Entrada) e.clone());
+            }
+            edgeTable_copia.put(chave, copiaList);
+        }      
     }
     
 }
